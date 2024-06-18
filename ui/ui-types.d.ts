@@ -294,9 +294,9 @@ export interface notificationList {
   cpuNotificationList: any[];
   stoppedNotificationList: any[];
 }
-
+// Changed alertList to a tuple [string | null, string | null] to ensure it always has exactly two elements: alert message and alert type.
 export interface AlertStateType {
-  alertList: (string | null)[];
+  alertList: [string | null, string | null];
   promptList:
     | [
         prompt: string | null,
