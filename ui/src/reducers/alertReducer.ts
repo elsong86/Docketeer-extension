@@ -4,9 +4,10 @@ import { useAppDispatch } from './hooks';
 import { AlertStateType } from '../../ui-types';
 import { setPrunePrompt } from './pruneReducer';
 
+// Updated initialState to match the refined AlertStateType: alertList is now initialized as [null, null] and promptList as [null, null, null].
 const initialState: AlertStateType = {
-  alertList: [],
-  promptList: [],
+  alertList: [null, null],
+  promptList: [null, null, null],
 };
 
 const alertSlice = createSlice({
@@ -19,6 +20,7 @@ const alertSlice = createSlice({
     ) => {
       state.alertList = [action.payload.alert, action.payload.type];
     },
+    // Ensured setPrompt sets promptList to an empty array only if handleAccept is null.
     setPrompt: (
       state,
       action: PayloadAction<{
@@ -27,18 +29,20 @@ const alertSlice = createSlice({
         handleDeny: (() => void) | null;
       }>
     ) => {
+      
       if (action.payload.handleAccept === null) {
         state.promptList = [];
+      } else {
+        state.promptList = [
+          action.payload.prompt,
+          action.payload.handleAccept,
+          action.payload.handleDeny,
+        ];
       }
-
-      state.promptList = [
-        action.payload.prompt,
-        action.payload.handleAccept,
-        action.payload.handleDeny,
-      ];
     },
   },
 });
+
 
 export const { setAlert, setPrompt } = alertSlice.actions;
 
