@@ -1,13 +1,7 @@
-// These are needed for fetch. Otherwise the default was being set to plain text
-// These values are overwritten by whatever the user supplies using spread operator
-// {...DEFAULT_HEADERS, ...userHeaders}
 const DEFAULT_HEADERS = {
   "Content-Type": "application/json"
-}
+};
 
-/**
- * @abstract Error to match the format the DockerDesktopClient Gives
- */
 class DdFetchError extends Error {
   statusCode: number;
 
@@ -19,24 +13,32 @@ class DdFetchError extends Error {
   }
 }
 
+// Assuming you have an environment variable or a way to detect if you are in Docker Desktop or a browser
+const isDockerDesktop = typeof process !== 'undefined' && process.env.IS_DOCKER_DESKTOP === 'true';
+
 /**
  * @abstract Wrapper function for ddClient and fetch. Tests whether the application is running in browser
- *           versus docker desktop and either will use ddClient or fetch. Returns a uniform response across
+ *           versus Docker Desktop and either will use ddClient or fetch. Returns a uniform response across
  *           either instance
  */
 export const ddClientRequest = async<T>(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body: any = {}, headers: any = {}): Promise<T> => {
-  let ddClient;
-
-  try {
-    const { createDockerDesktopClient } = await import("@docker/extension-api-client");
-    ddClient = createDockerDesktopClient();
-  } catch (error) {
-    ddClient = null;
-  }
-
-  // If we are debugging in browser, ddClient won't bind so use fetch
-  if (!ddClient || !ddClient.extension?.vm?.service?.request) {
-    console.log("Can't Bind ddClient, using Fetch");
+  if (isDockerDesktop) {
+    try {
+      const { createDockerDesktopClient } = await import("@docker/extension-api-client");
+      const ddClient = createDockerDesktopClient();
+      console.log("Docker Desktop client bound successfully.");
+      
+      const ddClientOptions = { method, url, data: body, headers };
+      console.log(`Making ddClient request with options:`, ddClientOptions);
+      const ddClientResponse = await ddClient.extension.vm.service.request(ddClientOptions) as Promise<T>;
+      console.log(`ddClient request succeeded with response:`, ddClientResponse);
+      return ddClientResponse;
+    } catch (error) {
+      console.error("Error importing Docker Desktop API client:", error);
+      throw new Error("Failed to bind Docker Desktop client.");
+    }
+  } else {
+    console.log("Using Fetch as a fallback");
     const fetchOptions: RequestInit = {
       method: method.toUpperCase(),
     };
@@ -44,10 +46,10 @@ export const ddClientRequest = async<T>(url: string, method: 'GET' | 'POST' | 'P
       fetchOptions.body = JSON.stringify(body);
     }
 
-    fetchOptions.headers = { ...DEFAULT_HEADERS, ...headers }
+    fetchOptions.headers = { ...DEFAULT_HEADERS, ...headers };
+    console.log(`Making fetch request to ${url} with options:`, fetchOptions);
     const result = await fetch(url, fetchOptions);
 
-    // Handle error message return to format the same as ddClient error messages
     if (!result.ok) {
       let errorMessage;
       try {
@@ -56,14 +58,14 @@ export const ddClientRequest = async<T>(url: string, method: 'GET' | 'POST' | 'P
       } catch (err) {
         errorMessage = result.statusText;
       }
+      console.error(`Fetch request to ${url} failed with status ${result.status}:`, errorMessage);
       throw new DdFetchError(errorMessage, result.status);
     }
 
-    return result.json().catch(err=>'no json') as Promise<T>;
+    const responseData = await result.json().catch(err => 'no json') as Promise<T>;
+    console.log(`Fetch request to ${url} succeeded with response:`, responseData);
+    return responseData;
   }
-
-  // If we are running as docker desktop extension, above is skipped and just routed to ddClient
-  return ddClient.extension.vm.service.request({method, url, data:body, headers}) as Promise<T>;
 };
 
 /**
@@ -79,3 +81,16 @@ export const encodeQuery = (dict: { [key: string]: string }): string => {
   }
   return query.slice(0, -1);
 }
+
+// Example usage
+// const getRunningContainers = async () => {
+//   try {
+//     const runningContainers = await ddClientRequest<any[]>('http://localhost:4000/api/docker/container/running');
+//     console.log('Running containers:', runningContainers);
+//     return runningContainers;
+//   } catch (error) {
+//     console.error('Error fetching running containers:', error);
+//   }
+// };
+
+// getRunningContainers();
