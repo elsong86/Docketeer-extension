@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
+import path from 'path';
 import { ServerError } from './backend-types';
 import process from 'process';
 import cookieParser from 'cookie-parser';
@@ -21,7 +22,7 @@ let SOCKETFILE: string;
 if (process.env.MODE === 'browser') {
   SOCKETFILE = '3000';
 } else {
-  SOCKETFILE = '/run/guest-services/backend.sock';
+  SOCKETFILE = path.join('/tmp', 'backend.sock'); // Change to a writable directory
 
   // Resets the docker socket, prevents the issue of VM socket being in use error but not always
   try {
@@ -50,7 +51,7 @@ So your MongoDB connection string would look something like this: mongodb://host
 */
 
 // USE LOCAL HOST INSTEAD OF CLOUD ATLAS
-const URI = 'mongodb://host.docker.internal:27017'
+const URI = 'mongodb://localhost:27017';
 
 mongoose
   .connect(
@@ -94,7 +95,7 @@ app.use(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (err: ServerError, req: Request, res: Response, next: NextFunction): Response => {
     const defaultErr: ServerError = {
-      log: {err:'Express error handler caught unknown middleware error'},
+      log: { err: 'Express error handler caught unknown middleware error' },
       status: 500,
       message: 'internal server error: HELLLO',
     };
@@ -109,4 +110,4 @@ app.listen(SOCKETFILE, (): void => {
   console.log(`Listening on socket: ${SOCKETFILE}`);
 });
 
-module.exports = app;
+export default app;

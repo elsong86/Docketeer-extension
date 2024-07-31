@@ -1,4 +1,15 @@
+import { Document } from 'mongoose';
 
+export interface PromScrapeModel extends Document {
+  honor_labels: boolean;
+  job_name: string;
+  metrics_path: string;
+  params: object;
+  relabel_configs: any[];
+  scrape_interval: string;
+  evaluation_interval: string;
+  static_configs: any[];
+}
 
 // ==============================================
 // CONTAINER TYPES
@@ -145,4 +156,5 @@ export interface countVulnerability {
   Medium?: number;
   High?: number;
   Critical?: number;
+  [key: string]: number | undefined;
 }

@@ -1,18 +1,8 @@
 // Model to store Scrape Configs after reading it off of prometheus.yaml file
 // Click on export button on Configuration Page for functionality
 
-import mongoose, { Schema, Document } from 'mongoose';
-
-interface PromScrapeModel extends Document {
-  honor_labels: boolean;
-  job_name: string;
-  metrics_path: string;
-  params: {};
-  relabel_configs: [];
-  scrape_interval: string;
-  evaluation_interval: string;
-  static_configs: [];
-}
+import mongoose, { Schema } from 'mongoose';
+import { PromScrapeModel } from '../backend-types';
 
 // Main schema for the 'Prometheus Scrape Configs Setting' object
 const PromScrapeSchema: Schema = new Schema({

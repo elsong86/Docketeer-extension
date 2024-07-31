@@ -109,14 +109,12 @@ imageController.scanImages = async (req, res, next) => {
 			const vulnerabilityJSON: GrypeScan[] = JSON.parse(stdout);
 
 			const countVulnerability: countVulnerability = vulnerabilityJSON.reduce(
-				(acc, cur) => {
-					acc.hasOwnProperty(cur.Severity)
-						? acc[cur.Severity]++
-						: (acc[cur.Severity] = 1);
-					return acc;
-				},
-				{}
-			);
+  (acc: countVulnerability, cur) => {
+    acc[cur.Severity] ? acc[cur.Severity]++ : (acc[cur.Severity] = 1);
+    return acc;
+  },
+  {} as countVulnerability // Ensure the initial value is typed correctly
+  );
 			res.locals.scanName = scanName;
 			res.locals.vulnerabilites = countVulnerability;
 			res.locals.everything = vulnerabilityJSON;
